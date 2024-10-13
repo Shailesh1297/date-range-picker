@@ -1,0 +1,86 @@
+<div class="date-range-picker">
+    <input
+      type="text"
+      (click)="onInputFocus()"
+      [value]="displayDateRange"
+      readonly
+      class="compact-input"
+      [placeholder]="mode() === 'basic' ? 'Select Date Range' : 'Advanced Date Selection'"
+    />
+  @if(showDatePicker()) {
+      <div class="date-picker">
+        <div class="dual-calendar">
+            <div class="calendar">
+                <div class="calendar-controls">
+                    <span>
+                        <button (click)="previousYear()" title="Previous Year">&lt;&lt;</button>
+                        <button (click)="previousMonth()" title="Previous Month">&lt;</button>
+                    </span>
+                    <span>{{ leftMonth | date: 'MMMM yyyy' }}</span>
+                    <span>
+                        <button (click)="nextMonth()" title="Next Month">&gt;</button>
+                        <button (click)="nextYear()" title="Next Year">&gt;&gt;</button>
+                    </span>
+                  </div>
+              <div class="calendar-pane">
+                <ng-container
+                    [ngTemplateOutlet]="monthView"
+                    [ngTemplateOutletContext]="{month: leftMonth, days: daysInMonthLeft}">
+                </ng-container>
+              </div>
+            </div>
+            <div class="calendar">
+                <div class="calendar-controls">
+                  <span>
+                      <button (click)="previousYear()" title="Previous Year">&lt;&lt;</button>
+                      <button (click)="previousMonth()" title="Previous Month">&lt;</button>
+                  </span>
+                  <span>{{ rightMonth | date: 'MMMM yyyy' }}</span>
+                  <span>
+                      <button (click)="nextMonth()" title="Next Month">&gt;</button>
+                      <button (click)="nextYear()" title="Next Year">&gt;&gt;</button>
+                  </span>
+                </div>
+                <div class="calendar-pane">
+                  <ng-container
+                      [ngTemplateOutlet]="monthView"
+                      [ngTemplateOutletContext]="{month: rightMonth, days: daysInMonthRight}">
+                  </ng-container>
+                </div>
+            </div>
+        </div>
+        <div class="date-picker-footer">
+          <button (click)="applyDateRange()">Ok</button>
+          <button (click)="clearDateRange()">Clear</button>
+        </div>
+      </div>
+  }
+  </div>
+
+<ng-template #monthView let-month="month" let-days="days">
+    <div class="day-names">
+        @for(day of dayNames; track day) {
+        <div class="day-name">{{ day }}</div>
+        }
+    </div>
+    <div class="days">
+        @for(day of days; track day) {
+            <div
+                class="day"
+                [ngClass]="{
+                    'disabled': isDisabled(day) || month.getMonth() != day.getMonth(),
+                    'selected': isSelected(day),
+                    'in-range': !isDisabled(day) && isInRange(day) && month.getMonth() == day.getMonth()
+                    }"
+                (mouseenter)="onDateHover(day)"
+                (click)="selectDate(day)">
+                @if(day.getDate() > 9) {
+                    {{ day.getDate() }}
+                }
+                @else {
+                    &nbsp;{{ day.getDate() }}&nbsp;
+                }
+            </div>
+        }
+    </div>
+</ng-template>

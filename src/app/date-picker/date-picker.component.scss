@@ -1,0 +1,108 @@
+
+.date-range-picker {
+    position: relative;
+    display: inline-block;
+
+    & .compact-input {
+        width: 200px;
+        padding: 8px;
+        font-size: 14px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        cursor: pointer;
+    }
+
+    & .date-picker {
+        width: 500px;
+        padding: 15px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+
+        & .dual-calendar {
+            display: flex;
+            justify-content: space-between;
+            gap: 0 5px;
+            & .calendar {
+                & .calendar-controls {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    & button {
+                        cursor: pointer;
+                    }
+                }
+
+                & .calendar-pane {
+                    & .day-names {
+                        display: flex;
+                        justify-content: space-between;
+                        font-weight: bold;
+                        padding: 5px 0;
+                        & .day-name {
+                            width: 14%;
+                            height: 30px;
+                        }
+                    }
+                    & .days {
+                        display: flex;
+                        flex-wrap: wrap;
+                        cursor: pointer;
+                        & .day {
+                            padding: 5px;
+                            margin: 7px;
+                            border-radius: 50%;
+                            transition: background-color 0.3s;
+                            &.selected {
+                                background-color: #007bff;
+                                color: white;
+                            }
+                            &.disabled {
+                                color: #ccc;
+                                cursor: not-allowed;
+                            }
+                            &.in-range {
+                                background-color: #e0e0e0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        & .date-picker-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding: 5px 0;
+            gap: 0 4px;
+            & button {
+                cursor: pointer;
+            }
+        }
+    }
+}
+
+@media (min-width: 320px) and (max-width: 768px) {
+    .date-range-picker {
+        & .date-picker {
+            position: fixed;
+            left: 5%;
+            width: 380px;
+            & .dual-calendar {
+                flex-flow: column;
+            }
+    }
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
