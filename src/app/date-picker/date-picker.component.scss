@@ -86,13 +86,14 @@
     .date-range-picker {
         & .date-picker {
             position: fixed;
-            left: 5%;
-            width: 380px;
+            left:5%;
+            top: 5%;
+            width: 300px;
             & .dual-calendar {
                 flex-flow: column;
             }
+        }
     }
-}
 }
 
 
