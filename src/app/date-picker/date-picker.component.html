@@ -1,4 +1,5 @@
-<div class="date-range-picker">
+<div class="date-range-picker"
+    (keyup.enter)="onInputFocus()">
     <input
       type="text"
       (click)="onInputFocus()"
@@ -66,6 +67,7 @@
     <div class="days">
         @for(day of days; track day) {
             <div
+                tabindex="0"
                 class="day"
                 [ngClass]="{
                     'disabled': isDisabled(day) || month.getMonth() != day.getMonth(),
@@ -73,7 +75,9 @@
                     'in-range': !isDisabled(day) && isInRange(day) && month.getMonth() == day.getMonth()
                     }"
                 (mouseenter)="onDateHover(day)"
-                (click)="selectDate(day)">
+                (click)="selectDate(day)"
+                (focus)="onDateHover(day)"
+                (keyup.enter)="$event.stopPropagation();selectDate(day)">
                 @if(day.getDate() > 9) {
                     {{ day.getDate() }}
                 }
