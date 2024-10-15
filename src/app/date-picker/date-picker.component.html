@@ -1,28 +1,21 @@
 <div class="date-range-picker"
-    (keyup.enter)="onInputFocus()">
+    (keyup.enter)="onPickerToggle()">
     <input
       type="text"
-      (click)="onInputFocus()"
+      (click)="onPickerToggle()"
       [value]="displayDateRange"
       readonly
       class="compact-input"
       [placeholder]="mode() === 'basic' ? 'Select Date Range' : 'Advanced Date Selection'"
     />
   @if(showDatePicker()) {
-      <div class="date-picker">
+      <div #datePicker class="date-picker" [style.transform]="'translate(' + translateX + 'px,'+translateY + 'px)'">
         <div class="dual-calendar">
             <div class="calendar">
-                <div class="calendar-controls">
-                    <span>
-                        <button (click)="previousYear()" title="Previous Year">&lt;&lt;</button>
-                        <button (click)="previousMonth()" title="Previous Month">&lt;</button>
-                    </span>
-                    <span>{{ leftMonth | date: 'MMMM yyyy' }}</span>
-                    <span>
-                        <button (click)="nextMonth()" title="Next Month">&gt;</button>
-                        <button (click)="nextYear()" title="Next Year">&gt;&gt;</button>
-                    </span>
-                  </div>
+                <ng-container
+                [ngTemplateOutlet]="controls"
+                [ngTemplateOutletContext]="{month: leftMonth}">
+            </ng-container>
               <div class="calendar-pane">
                 <ng-container
                     [ngTemplateOutlet]="monthView"
@@ -31,17 +24,10 @@
               </div>
             </div>
             <div class="calendar">
-                <div class="calendar-controls">
-                  <span>
-                      <button (click)="previousYear()" title="Previous Year">&lt;&lt;</button>
-                      <button (click)="previousMonth()" title="Previous Month">&lt;</button>
-                  </span>
-                  <span>{{ rightMonth | date: 'MMMM yyyy' }}</span>
-                  <span>
-                      <button (click)="nextMonth()" title="Next Month">&gt;</button>
-                      <button (click)="nextYear()" title="Next Year">&gt;&gt;</button>
-                  </span>
-                </div>
+                <ng-container
+                    [ngTemplateOutlet]="controls"
+                    [ngTemplateOutletContext]="{month: rightMonth}">
+                </ng-container>
                 <div class="calendar-pane">
                   <ng-container
                       [ngTemplateOutlet]="monthView"
@@ -57,6 +43,20 @@
       </div>
   }
   </div>
+
+<ng-template #controls let-month="month">
+    <div class="calendar-controls">
+        <span class="previous">
+            <button class="year" (click)="previousYear()" title="Previous Year">&lt;&lt;</button>
+            <button class="month" (click)="previousMonth()" title="Previous Month">&lt;</button>
+        </span>
+        <span class="month-label">{{ month | date: 'MMMM yyyy' }}</span>
+        <span class="next">
+            <button class="month" (click)="nextMonth()" title="Next Month">&gt;</button>
+            <button class="year" (click)="nextYear()" title="Next Year">&gt;&gt;</button>
+        </span>
+      </div>
+</ng-template>
 
 <ng-template #monthView let-month="month" let-days="days">
     <div class="day-names">
@@ -82,7 +82,7 @@
                     {{ day.getDate() }}
                 }
                 @else {
-                    &nbsp;{{ day.getDate() }}&nbsp;
+                    &#8205;{{ day.getDate() }}
                 }
             </div>
         }

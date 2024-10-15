@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, forwardRef, input, OnDestroy, Renderer2, signal } from '@angular/core';
+import { afterRender, Component, ElementRef, forwardRef, HostListener, input, signal, viewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
@@ -16,7 +16,9 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
     }
   ]
 })
-export class DatePickerComponent implements ControlValueAccessor, AfterViewInit, OnDestroy {
+export class DatePickerComponent implements ControlValueAccessor {
+
+  datePicker = viewChild<ElementRef>('datePicker');
 
   mode = input<'basic' | 'advanced'>('basic');
 
@@ -51,22 +53,28 @@ export class DatePickerComponent implements ControlValueAccessor, AfterViewInit,
   daysInMonthLeft: Date[] = [];
   daysInMonthRight: Date[] = [];
 
+  //adjust picker position
+  translateX = 0;
+  translateY = 0;
+
   private value: string | null = null;
 
-  private documentClickListener: (() => void) | undefined;
-
   // Callback functions
-  onChange = (value: string) => {};
-  onTouched = () => {};
+  onChange = (value: string) => { };
+  onTouched = () => { };
 
-  constructor(private renderer: Renderer2, private elementRef: ElementRef) {
+  constructor(private elementRef: ElementRef) {
     this.generateDaysForMonth();
+    afterRender(() => {
+      this.realignPickerPosition();
+    });
+
   }
 
   //control value accessor overriden methods
 
   writeValue(obj: any): void {
-    if(obj != this.value) {
+    if (obj != this.value) {
       this.value = obj;
     }
   }
@@ -80,19 +88,13 @@ export class DatePickerComponent implements ControlValueAccessor, AfterViewInit,
     //not required
   }
 
-  ngAfterViewInit(): void {
-    this.documentClickListener = this.renderer.listen('document', 'click', (event: MouseEvent) => {
-      if (this.showDatePicker && !this.elementRef.nativeElement.contains(event.target)) {
-        this.showDatePicker.update(() => false);
-      }
-    });
-  }
-
-  ngOnDestroy(): void {
-    if (this.documentClickListener) {
-      this.documentClickListener();
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.showDatePicker() && !this.elementRef.nativeElement.contains(event.target)) {
+      this.onPickerToggle();
     }
   }
+
 
   get displayDateRange(): string {
     if (this.startDate || this.endDate) {
@@ -162,32 +164,28 @@ export class DatePickerComponent implements ControlValueAccessor, AfterViewInit,
 
   onDateHover(day: Date): void {
     if (this.isDisabled(day)) return;
-    this.hoverDate = this.startDate && !this.endDate ? day: null;
+    this.hoverDate = this.startDate && !this.endDate ? day : null;
   }
 
   isDisabled(day: Date): boolean {
-    if(this.mode() == 'basic') {
+    if (this.mode() == 'basic') {
       return false;
     }
+
+    //advanced mode
     let flag = false;
-    let today = new Date();
 
     //disable past dates
-    if(this.disablePastDates()) {
-      const dayBefore = new Date(today.setDate(today.getDate() - 1));
-      flag = flag || day < dayBefore;
+    if (this.disablePastDates()) {
+      flag = flag || this.isBeforeToday(day);
     }
 
     //day exclusion
-    const dayOfWeek = day.getDay();
-    const excludedDays = this.excludeDays().split(',').map((x) => parseInt(x));
-    flag = flag || excludedDays.includes(dayOfWeek);
+    flag = flag || this.isInExcludedDays(day);
 
     //range limit
-    if(this.startDate) {
-      today = new Date();
-      const maxAllowedDate = new Date(today.setDate(today.getDate() + this.maxDateRange()));
-      flag =  flag || (day < new Date() || day > maxAllowedDate);
+    if (this.startDate) {
+      flag = flag || this.isInRangeLimit(day);
     }
     return flag;
   }
@@ -202,14 +200,18 @@ export class DatePickerComponent implements ControlValueAccessor, AfterViewInit,
   isInRange(day: Date): boolean {
     if (this.startDate && this.endDate) {
       return day > this.startDate && day < this.endDate;
-    }else  if (this.startDate && !this.endDate) {
+    } else if (this.startDate && !this.endDate) {
       return day > this.startDate && day < this.hoverDate!;
     }
     return false;
   }
 
-  onInputFocus(): void {
+  onPickerToggle(): void {
     this.showDatePicker.update((state) => !state);
+    if (!this.showDatePicker()) {
+      this.translateX = 0;
+      this.translateY = 0;
+    }
   }
 
   getDateDifference(start: Date, end: Date): number {
@@ -226,6 +228,43 @@ export class DatePickerComponent implements ControlValueAccessor, AfterViewInit,
   clearDateRange(): void {
     this.startDate = null;
     this.endDate = null;
+  }
+
+  private isBeforeToday(day: Date): boolean {
+    const today = new Date();
+    const dayBefore = new Date(today.setDate(today.getDate() - 1));
+    return day < dayBefore;
+  }
+
+  private isInExcludedDays(day: Date): boolean {
+    const dayOfWeek = day.getDay();
+    const excludedDays = this.excludeDays().split(',').map((x) => parseInt(x));
+    return excludedDays.includes(dayOfWeek);
+  }
+
+  private isInRangeLimit(day: Date): boolean {
+    const sDate = new Date(this.startDate!);
+    const maxAllowedDate = new Date(sDate.setDate(sDate.getDate() + this.maxDateRange()));
+    return day < this.startDate! || day > maxAllowedDate;
+  }
+
+  /**
+   * @description realigns the picker container if overflows
+   * out of the viewport
+   */
+  private realignPickerPosition() {
+    const ele = this.datePicker()?.nativeElement;
+    if (ele && this.showDatePicker()) {
+      const { x, y, width, height } = ele.getBoundingClientRect();
+      const cw = x + width - this.translateX,
+        ch = y + height - this.translateY;
+      if (cw > window.innerWidth) {
+        this.translateX = window.innerWidth - cw;
+      }
+      if (ch > window.innerHeight) {
+        this.translateY = window.innerHeight - ch;
+      }
+    }
   }
 
 }
